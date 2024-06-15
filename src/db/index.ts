@@ -1,22 +1,22 @@
-import { SQLJsDatabase } from "drizzle-orm/sql-js";
-import initSqlJs, { Database } from "sql.js/dist/sql-asm.js";
-import { migrations } from "./migrations";
-import * as schema from "./schema";
+import initSqlJs, { Database } from 'sql.js/dist/sql-asm.js';
+import { DataSource } from 'typeorm';
 
-export type DrizzleDb = SQLJsDatabase<typeof schema>;
+import { Post } from '../entities/posts/db';
+import { User } from '../entities/users/db';
 
+// TODO figure out migrations
 export async function initDb(
-  bytes: Uint8Array = Uint8Array.from([])
+    bytes: Uint8Array = Uint8Array.from([])
 ): Promise<Database> {
-  const SQL = await initSqlJs({});
+    const AppDataSource = new DataSource({
+        type: 'sqljs',
+        synchronize: true, // TODO we should figure out real migrations for people
+        entities: [Post, User],
+        driver: await initSqlJs({}),
+        database: bytes
+    });
 
-  let db = new SQL.Database(bytes);
+    const _appDataSource = await AppDataSource.initialize();
 
-  if (bytes.length === 0) {
-    for (const migration of migrations) {
-      db.run(migration);
-    }
-  }
-
-  return db;
+    return _appDataSource.driver as unknown as Database;
 }
