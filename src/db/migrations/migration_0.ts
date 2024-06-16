@@ -1,17 +1,27 @@
 export const migration0 = `
-    CREATE TABLE users
-    (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        age INTEGER NOT NULL
-    );
+CREATE TABLE user (
+  id VARCHAR(255) NOT NULL,
+  username VARCHAR(255) NOT NULL,
+  type ENUM('free', 'pro') NOT NULL DEFAULT 'free',
+  PRIMARY KEY (id)
+);
 
-    CREATE TABLE posts
-    (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        body TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-    );
+CREATE TABLE collaborator (
+  id UUID NOT NULL,
+  userId VARCHAR(255),
+  postId UUID,
+  PRIMARY KEY (id),
+  FOREIGN KEY (userId) REFERENCES user(id),
+  FOREIGN KEY (postId) REFERENCES post(id)
+);
+
+CREATE TABLE post (
+  id UUID NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  isPublic BOOLEAN NOT NULL DEFAULT TRUE,
+  content TEXT NOT NULL,
+  userId VARCHAR(255),
+  PRIMARY KEY (id),
+  FOREIGN KEY (userId) REFERENCES user(id)
+);
 `;

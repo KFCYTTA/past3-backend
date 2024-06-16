@@ -1,18 +1,28 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn,OneToMany } from 'typeorm';
+import { Post } from '../posts/db';
+import { Collaborator } from '../collaborators/db';
+
 
 @Entity()
 export class User extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column({ primary: true })
+  id: string;
 
-    @Column({ unique: true })
-    username: string;
+  @Column()
+  username: string;
 
-    @Column()
-    age: number;
+  @Column({ default: 'free' })
+  type: 'free' | 'pro';
+
+  @OneToMany(() => Post, (post) => post.user)
+  posts: Post[];
+
+
+  @OneToMany(() => Collaborator, (collaborator) => collaborator.user)
+  collaborators: Collaborator[];
 }
 
-export type UserCreate = Pick<User, 'username' | 'age'>;
+export type UserCreate = Pick<User, 'username' | 'type'>;
 export type UserUpdate = Pick<User, 'id'> & Partial<UserCreate>;
 
 export async function getUsers(limit: number, offset: number): Promise<User[]> {
@@ -22,7 +32,7 @@ export async function getUsers(limit: number, offset: number): Promise<User[]> {
     });
 }
 
-export async function getUser(id: number): Promise<User | null> {
+export async function getUser(id: string): Promise<User | null> {
     return await User.findOne({
         where: {
             id
@@ -38,7 +48,7 @@ export async function createUser(userCreate: UserCreate): Promise<User> {
     let user = new User();
 
     user.username = userCreate.username;
-    user.age = userCreate.age;
+    user.type = userCreate.type;
 
     return await user.save();
 }
@@ -46,7 +56,7 @@ export async function createUser(userCreate: UserCreate): Promise<User> {
 export async function updateUser(userUpdate: UserUpdate): Promise<User> {
     await User.update(userUpdate.id, {
         username: userUpdate.username,
-        age: userUpdate.age
+        type: userUpdate.type
     });
 
     const user = await getUser(userUpdate.id);

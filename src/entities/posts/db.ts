@@ -8,22 +8,26 @@ import {
 
 import { getUser, User } from '../users/db';
 
+
 @Entity()
 export class Post extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column()
-    body: string;
+  @Column({ default: true })
+  isPublic: boolean;
 
-    @ManyToOne(() => User)
-    user: User;
+  @Column('text')
+  content: string;
+
+  @ManyToOne(() => User, (user) => user.posts)
+  user: User;
 }
 
-export type PostCreate = Pick<Post, 'title' | 'body'> & { user_id: User['id'] };
+export type PostCreate = Pick<Post, 'title' | 'content' | 'isPublic'> & { user_id: User['id'] };
 export type PostUpdate = Pick<Post, 'id'> & Partial<PostCreate>;
 
 export async function getPosts(limit: number, offset: number): Promise<Post[]> {
@@ -36,7 +40,7 @@ export async function getPosts(limit: number, offset: number): Promise<Post[]> {
     });
 }
 
-export async function getPost(id: number): Promise<Post | null> {
+export async function getPost(id: string): Promise<Post | null> {
     return await Post.findOne({
         where: {
             id
@@ -55,7 +59,8 @@ export async function createPost(postCreate: PostCreate): Promise<Post> {
     let post = new Post();
 
     post.title = postCreate.title;
-    post.body = postCreate.body;
+    post.content = postCreate.content;
+    post.isPublic = postCreate.isPublic;
 
     const user = await getUser(postCreate.user_id);
 
@@ -73,7 +78,8 @@ export async function updatePost(postUpdate: PostUpdate): Promise<Post> {
 
     await Post.update(postUpdate.id, {
         title: postUpdate.title,
-        body: postUpdate.body,
+        content: postUpdate.content,
+        isPublic: postUpdate.isPublic,
         user: {
             id: postUpdate.id
         }
