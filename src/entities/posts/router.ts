@@ -8,7 +8,8 @@ import {
     deletePost,
     getPost,
     getPosts,
-    updatePost
+    updatePost,
+    getPostsByUserId
 } from './db';
 
 export function getRouter(): Router {
@@ -28,6 +29,21 @@ export function getRouter(): Router {
             res.json(posts);
         }
     );
+    router.get(
+        '/users/:id',
+        async (
+            req: Request<any, any, any, { id: string; limit?: string; offset?: string }>,
+            res
+        ) => {
+            const { limit, offset, id} = req.query
+            const limits = Number(limit ?? -1);
+            const offsets = Number(offset ?? 0);
+            
+            const posts = await getPostsByUserId(id,limits, offsets);
+
+            res.json(posts);
+        }
+    );
 
     router.get('/count', async (_req, res) => {
         res.json(await countPosts());
@@ -36,7 +52,7 @@ export function getRouter(): Router {
     router.get('/:id', async (req, res) => {
         const { id } = req.params;
 
-        const post = await getPost(Number(id));
+        const post = await getPost(id);
 
         console.log('post', post);
 
@@ -46,46 +62,47 @@ export function getRouter(): Router {
     router.post(
         '/',
         async (
-            req: Request<any, any, { title: string; body: string }>,
+            req: Request<any, any, { title: string; content: string; user_id: string; isPublic: boolean }>,
             res
         ) => {
-            const { title, body } = req.body;
+            try {
+                const { title, content, user_id, isPublic } = req.body;
 
-            const user = await createUser({
-                username: `lastmjs${v4()}`,
-                age: 33
-            });
+                const post = await createPost({
+                    user_id,
+                    title,
+                    content,
+                    isPublic
+                });
 
-            const post = await createPost({
-                user_id: user.id,
-                title,
-                body
-            });
-
-            res.json(post);
+                res.json(post);
+            }catch (e) {
+                res.json(e);
+            }
+           
         }
     );
 
-    router.post('/batch/:num', async (req, res) => {
-        const num = Number(req.params.num);
+    // router.post('/batch/:num', async (req, res) => {
+    //     const num = Number(req.params.num);
 
-        for (let i = 0; i < Number(req.params.num); i++) {
-            const user = await createUser({
-                username: `lastmjs${v4()}`,
-                age: i
-            });
+    //     for (let i = 0; i < Number(req.params.num); i++) {
+    //         const user = await createUser({
+    //             username: `lastmjs${v4()}`,
+    //             age: i
+    //         });
 
-            await createPost({
-                user_id: user.id,
-                title: `Post ${v4()}`,
-                body: `${v4()}${v4()}${v4()}${v4()}`
-            });
-        }
+    //         await createPost({
+    //             user_id: user.id,
+    //             title: `Post ${v4()}`,
+    //             body: `${v4()}${v4()}${v4()}${v4()}`
+    //         });
+    //     }
 
-        res.send({
-            Success: `${num} posts created`
-        });
-    });
+    //     res.send({
+    //         Success: `${num} posts created`
+    //     });
+    // });
 
     router.put('/', updateHandler);
 
@@ -106,17 +123,18 @@ async function updateHandler(
     req: Request<
         any,
         any,
-        { id: number; user_id?: number; title?: string; body?: string }
+        { id: string; user_id?: string; title?: string; content?: string; isPublic?: boolean }
     >,
     res: Response
 ) {
-    const { id, user_id, title, body } = req.body;
+    const { id, user_id, title, content, isPublic } = req.body;
 
     const post = await updatePost({
         id,
         user_id,
         title,
-        body
+        content,
+        isPublic
     });
 
     res.json(post);

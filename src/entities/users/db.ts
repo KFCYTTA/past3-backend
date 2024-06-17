@@ -1,28 +1,18 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn,OneToMany } from 'typeorm';
-import { Post } from '../posts/db';
-import { Collaborator } from '../collaborators/db';
-
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class User extends BaseEntity {
-  @Column({ primary: true })
-  id: string;
+    @Column({ primary: true })
+    id: string;
 
-  @Column()
-  username: string;
+    @Column({ unique: true })
+    username: string;
 
-  @Column({ default: 'free' })
-  type: 'free' | 'pro';
-
-  @OneToMany(() => Post, (post) => post.user)
-  posts: Post[];
-
-
-  @OneToMany(() => Collaborator, (collaborator) => collaborator.user)
-  collaborators: Collaborator[];
+    @Column({ default: 'free' })
+    type: 'free' | 'pro';
 }
 
-export type UserCreate = Pick<User, 'username' | 'type'>;
+export type UserCreate = Pick<User, 'id'|'username' | 'type'>;
 export type UserUpdate = Pick<User, 'id'> & Partial<UserCreate>;
 
 export async function getUsers(limit: number, offset: number): Promise<User[]> {
@@ -47,6 +37,7 @@ export async function countUsers(): Promise<number> {
 export async function createUser(userCreate: UserCreate): Promise<User> {
     let user = new User();
 
+    user.id = userCreate.id;
     user.username = userCreate.username;
     user.type = userCreate.type;
 

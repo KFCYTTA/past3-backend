@@ -35,7 +35,7 @@ export function getRouter(): Router {
     router.get('/:id', async (req, res) => {
         const { id } = req.params;
 
-        const user = await getUser(Number(id));
+        const user = await getUser(id);
 
         res.json(user);
     });
@@ -43,34 +43,40 @@ export function getRouter(): Router {
     router.post(
         '/',
         async (
-            req: Request<any, any, { username: string; age: number }>,
+            req: Request<any, any, { id: string; username: string; type: 'free' | 'pro' }>,
             res
         ) => {
-            const { username, age } = req.body;
+            try{
+                const { id,username, type } = req.body;
 
-            const user = await createUser({
-                username,
-                age
-            });
+                const user = await createUser({
+                    id,
+                    username,
+                    type
+                });
 
-            res.json(user);
+                res.json(user);
+            }catch(error){
+                res.json(error)
+            }
+           
         }
     );
 
-    router.post('/batch/:num', async (req, res) => {
-        const num = Number(req.params.num);
+    // router.post('/batch/:num', async (req, res) => {
+    //     const num = Number(req.params.num);
 
-        for (let i = 0; i < Number(req.params.num); i++) {
-            await createUser({
-                username: `lastmjs${v4()}`,
-                age: i
-            });
-        }
+    //     for (let i = 0; i < Number(req.params.num); i++) {
+    //         await createUser({
+    //             username: `lastmjs${v4()}`,
+    //             age: i
+    //         });
+    //     }
 
-        res.json({
-            Success: `${num} users created`
-        });
-    });
+    //     res.json({
+    //         Success: `${num} users created`
+    //     });
+    // });
 
     router.put('/', updateHandler);
 
@@ -88,15 +94,15 @@ export function getRouter(): Router {
 }
 
 async function updateHandler(
-    req: Request<any, any, { id: number; username?: string; age?: number }>,
+    req: Request<any, any, { id: string; username?: string; type?: 'free' | 'pro' }>,
     res: Response
 ) {
-    const { id, username, age } = req.body;
+    const { id, username, type } = req.body;
 
     const user = await updateUser({
         id,
         username,
-        age
+        type
     });
 
     res.json(user);

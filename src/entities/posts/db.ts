@@ -8,23 +8,22 @@ import {
 
 import { getUser, User } from '../users/db';
 
-
 @Entity()
 export class Post extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
-  @Column()
-  title: string;
+    @Column()
+    title: string;
 
-  @Column({ default: true })
-  isPublic: boolean;
+    @Column({ default: true })
+    isPublic: boolean;
 
-  @Column('text')
-  content: string;
+    @Column()
+    content: string;
 
-  @ManyToOne(() => User, (user) => user.posts)
-  user: User;
+    @ManyToOne(() => User)
+    user: User;
 }
 
 export type PostCreate = Pick<Post, 'title' | 'content' | 'isPublic'> & { user_id: User['id'] };
@@ -34,6 +33,21 @@ export async function getPosts(limit: number, offset: number): Promise<Post[]> {
     return await Post.find({
         take: limit,
         skip: offset,
+        relations: {
+            user: true
+        }
+    });
+}
+
+export async function getPostsByUserId(userId: User['id'], limit: number, offset: number): Promise<Post[]> {
+    return await Post.find({
+        take: limit,
+        skip: offset,
+        where: {
+            user: {
+                id: userId
+            }
+        },
         relations: {
             user: true
         }
